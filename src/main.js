@@ -446,11 +446,43 @@ async function handleDownloadPDF() {
   downloadBtn.textContent = 'Generating...';
   downloadBtn.disabled = true;
 
+  // 1. Save original styles
+  const originalOverflow = element.style.overflow;
+  const originalWidth = element.style.width;
+  const originalHeight = element.style.height;
+
   try {
+    // 2. Expand element to fit full scrollable content
+    // We clone the node to avoid jarring UI flickers, or we just force styles on the live element.
+    // For reliability with html2canvas (which uses the computed styles), forcing valid styles on the live element is often safer if done quickly.
+
+    // Force full width/height to show all scrollable content
+    element.style.overflow = 'visible';
+    element.style.width = 'fit-content';
+    element.style.height = 'auto'; // Let it grow
+
+    // Note: If the parent container constrains it, we might need to be careful.
+    // Ideally, we capture the 'timetable-grid' which is the scrollable inner part.
+    // The .timetable-section has 'overflow: auto'.
+    // The .timetable-grid has 'min-width: 800px'.
+
+    // Let's target the grid directly for better results? 
+    // The header is inside .timetable-section but outside .timetable-grid. We want both.
+
+    // Hack: Position absolute to break out of layout constraints momentarily
+    // element.style.position = 'absolute'; 
+    // element.style.top = '0';
+    // element.style.left = '0';
+    // element.style.zIndex = '-1000'; // Hide it behind something or just let it overlay for a split second (user won't notice much)
+
     const canvas = await html2canvas(element, {
       scale: 2, // Higher quality
       backgroundColor: '#1e1b4b', // Match background
-      useCORS: true
+      useCORS: true,
+      // windowWidth: element.scrollWidth, // Tell html2canvas the full width
+      // windowHeight: element.scrollHeight
+      width: element.scrollWidth,
+      height: element.scrollHeight
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -463,13 +495,20 @@ async function handleDownloadPDF() {
     const imgWidth = pdfWidth;
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    // Center vertically if it fits, else top align
-    let yPos = 0;
-    if (imgHeight < pdfHeight) {
-      yPos = (pdfHeight - imgHeight) / 2;
+    // Check if image handles height well, if not scale to fit height
+    let finalWidth = imgWidth;
+    let finalHeight = imgHeight;
+
+    if (imgHeight > pdfHeight) {
+      finalHeight = pdfHeight;
+      finalWidth = (canvas.width * pdfHeight) / canvas.height;
     }
 
-    pdf.addImage(imgData, 'PNG', 0, yPos, imgWidth, imgHeight);
+    // Center horizontally/vertically
+    const xPos = (pdfWidth - finalWidth) / 2;
+    const yPos = (pdfHeight - finalHeight) / 2;
+
+    pdf.addImage(imgData, 'PNG', xPos, yPos, finalWidth, finalHeight);
     pdf.save('my-timetable.pdf');
 
     showToast("PDF Downloaded!", true);
@@ -477,6 +516,11 @@ async function handleDownloadPDF() {
     console.error(err);
     showToast("Failed to generate PDF", false);
   } finally {
+    // 3. Restore styles
+    element.style.overflow = originalOverflow;
+    element.style.width = originalWidth;
+    element.style.height = originalHeight;
+
     downloadBtn.textContent = originalText;
     downloadBtn.disabled = false;
   }
