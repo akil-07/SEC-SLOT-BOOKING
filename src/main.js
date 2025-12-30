@@ -438,89 +438,111 @@ function showToast(msg, isSuccess = true) {
 }
 
 async function handleDownloadPDF() {
-  const element = document.querySelector('.timetable-section');
-  if (!element) return;
-
   // Visual feedback
   const originalText = downloadBtn.textContent;
   downloadBtn.textContent = 'Generating...';
   downloadBtn.disabled = true;
 
-  // 1. Save original styles
-  const originalOverflow = element.style.overflow;
-  const originalWidth = element.style.width;
-  const originalHeight = element.style.height;
-
   try {
-    // 2. Expand element to fit full scrollable content
-    // We clone the node to avoid jarring UI flickers, or we just force styles on the live element.
-    // For reliability with html2canvas (which uses the computed styles), forcing valid styles on the live element is often safer if done quickly.
+    // 1. Create a temporary container for the print view
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.top = '-9999px';
+    printContainer.style.left = '0';
+    printContainer.style.width = '1200px'; // Fixed width for consistent print quality
+    printContainer.style.backgroundColor = '#ffffff';
+    printContainer.style.padding = '40px';
+    printContainer.style.fontFamily = 'Arial, sans-serif';
+    printContainer.style.color = '#000000';
 
-    // Force full width/height to show all scrollable content
-    element.style.overflow = 'visible';
-    element.style.width = 'fit-content';
-    element.style.height = 'auto'; // Let it grow
+    // Header
+    const headerHtml = `
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="margin: 0; font-size: 24px;">Weekly Academic Schedule</h1>
+        <p style="margin: 5px 0; color: #666;">Generated on ${new Date().toLocaleDateString()}</p>
+      </div>
+    `;
 
-    // Note: If the parent container constrains it, we might need to be careful.
-    // Ideally, we capture the 'timetable-grid' which is the scrollable inner part.
-    // The .timetable-section has 'overflow: auto'.
-    // The .timetable-grid has 'min-width: 800px'.
+    // Table Content
+    let tableHtml = `
+      <table style="width: 100%; border-collapse: collapse; border: 2px solid #000;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="border: 1px solid #000; padding: 12px; font-weight: bold; width: 100px;">Day</th>
+            ${TIME_SLOTS.map(t => `<th style="border: 1px solid #000; padding: 12px; font-weight: bold;">${t}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
-    // Let's target the grid directly for better results? 
-    // The header is inside .timetable-section but outside .timetable-grid. We want both.
+    DAYS.forEach(day => {
+      tableHtml += `<tr>`;
+      // Day Column
+      tableHtml += `<td style="border: 1px solid #000; padding: 12px; font-weight: bold; background-color: #fafafa;">${day}</td>`;
 
-    // Hack: Position absolute to break out of layout constraints momentarily
-    // element.style.position = 'absolute'; 
-    // element.style.top = '0';
-    // element.style.left = '0';
-    // element.style.zIndex = '-1000'; // Hide it behind something or just let it overlay for a split second (user won't notice much)
+      // Slot Columns
+      TIME_SLOTS.forEach(time => {
+        const booking = state.myBookings.find(b =>
+          b.day === day && normalizeTime(b.time) === normalizeTime(time)
+        );
 
-    const canvas = await html2canvas(element, {
-      scale: 2, // Higher quality
-      backgroundColor: '#1e1b4b', // Match background
-      useCORS: true,
-      // windowWidth: element.scrollWidth, // Tell html2canvas the full width
-      // windowHeight: element.scrollHeight
-      width: element.scrollWidth,
-      height: element.scrollHeight
+        let cellContent = '';
+        if (booking) {
+          cellContent = `
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${booking.subject}</div>
+            <div style="font-size: 12px; color: #444;">${booking.teacher}</div>
+          `;
+        }
+
+        tableHtml += `<td style="border: 1px solid #000; padding: 10px; vertical-align: top; height: 60px;">${cellContent}</td>`;
+      });
+      tableHtml += `</tr>`;
+    });
+
+    tableHtml += `</tbody></table>`;
+
+    printContainer.innerHTML = headerHtml + tableHtml;
+    document.body.appendChild(printContainer);
+
+    // 2. Capture the printable table
+    const canvas = await html2canvas(printContainer, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false
     });
 
     const imgData = canvas.toDataURL('image/png');
 
-    // Landscape A4
+    // 3. Generate PDF (Landscape A4)
     const pdf = new jsPDF('l', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+    // Scale to fit width with some margin
+    const margin = 10;
+    const availableWidth = pdfWidth - (margin * 2);
+    const scaleFactor = availableWidth / canvas.width;
 
-    // Check if image handles height well, if not scale to fit height
-    let finalWidth = imgWidth;
-    let finalHeight = imgHeight;
+    const imgWidth = availableWidth;
+    const imgHeight = canvas.height * scaleFactor;
 
-    if (imgHeight > pdfHeight) {
-      finalHeight = pdfHeight;
-      finalWidth = (canvas.width * pdfHeight) / canvas.height;
+    // Center vertically if fits
+    let yPos = margin;
+    if (imgHeight < (pdfHeight - margin * 2)) {
+      yPos = (pdfHeight - imgHeight) / 2;
     }
 
-    // Center horizontally/vertically
-    const xPos = (pdfWidth - finalWidth) / 2;
-    const yPos = (pdfHeight - finalHeight) / 2;
+    pdf.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
+    pdf.save('Academic_My_Timetable.pdf'); // Improved filename
 
-    pdf.addImage(imgData, 'PNG', xPos, yPos, finalWidth, finalHeight);
-    pdf.save('my-timetable.pdf');
-
+    // Cleanup
+    document.body.removeChild(printContainer);
     showToast("PDF Downloaded!", true);
+
   } catch (err) {
     console.error(err);
     showToast("Failed to generate PDF", false);
   } finally {
-    // 3. Restore styles
-    element.style.overflow = originalOverflow;
-    element.style.width = originalWidth;
-    element.style.height = originalHeight;
-
     downloadBtn.textContent = originalText;
     downloadBtn.disabled = false;
   }
