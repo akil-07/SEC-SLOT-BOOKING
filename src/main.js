@@ -16,7 +16,6 @@ const state = {
   myBookings: [],          // Local user bookings [{subject, teacher, day, time}]
   searchTerm: '',
   selectedSubject: null,   // New: Currently selected subject for timetable view
-  selectedTeacher: null,   // New: Focus on a specific teacher
   modalTarget: null        // Slot currently being booked
 };
 
@@ -138,115 +137,65 @@ function deleteBooking(index) {
 function renderSubjectList() {
   subjectListContainer.innerHTML = '';
 
-  // 1. Group by Subject
-  const subjectGroups = {};
-  Object.entries(state.teacherMap).forEach(([teacher, data]) => {
-    if (!subjectGroups[data.subject]) {
-      subjectGroups[data.subject] = [];
-    }
-    subjectGroups[data.subject].push(teacher);
+  // Convert map to array for sorting/filtering
+  // Map: TeacherName -> { subject, code }
+  const items = Object.entries(state.teacherMap).map(([teacher, data]) => ({
+    teacher,
+    subject: data.subject
+  }));
+
+  // Filter
+  const filtered = items.filter(item => {
+    if (!state.searchTerm) return true;
+    return item.subject.toLowerCase().includes(state.searchTerm) ||
+      item.teacher.toLowerCase().includes(state.searchTerm);
   });
 
-  // 2. Filter keys if search term exists
-  let subjects = Object.keys(subjectGroups).sort();
-  if (state.searchTerm) {
-    subjects = subjects.filter(sub => {
-      // Match subject name OR any of its teachers
-      const matchSub = sub.toLowerCase().includes(state.searchTerm);
-      const matchTeacher = subjectGroups[sub].some(t => t.toLowerCase().includes(state.searchTerm));
-      return matchSub || matchTeacher;
-    });
-  }
+  // Sort by Subject Name
+  filtered.sort((a, b) => a.subject.localeCompare(b.subject));
 
-  if (subjects.length === 0) {
+  if (filtered.length === 0) {
     subjectListContainer.innerHTML = '<div style="padding:1rem; color:var(--text-muted)">No matches found</div>';
     return;
   }
 
-  // 3. Render
-  subjects.forEach(subject => {
-    const isActive = state.selectedSubject === subject;
-
-    // Container
-    const groupEl = document.createElement('div');
-    groupEl.className = `subject-group ${isActive ? 'active' : ''}`;
-
-    // Header
-    const header = document.createElement('div');
-    header.className = 'subject-header';
-    // Check for bookings in this subject
-    const isBooked = state.myBookings.some(b => b.subject === subject);
-
-    header.innerHTML = `
-        <span>${subject} ${isBooked ? '<span style="color:var(--success); margin-left:0.5rem">✓</span>' : ''}</span>
-        <span style="font-size:0.8rem; opacity:0.6">${isActive ? '▼' : '▶'}</span>
-     `;
-    header.onclick = () => selectSubject(subject);
-
-    groupEl.appendChild(header);
-
-    // Staff Suggestion List (Only if active)
-    if (isActive) {
-      const staffList = document.createElement('ul');
-      staffList.className = 'staff-suggestion-list';
-
-      subjectGroups[subject].forEach(teacher => {
-        const li = document.createElement('li');
-        li.textContent = teacher;
-        if (state.selectedTeacher === teacher) {
-          li.classList.add('selected-teacher');
-          li.innerHTML += ' <span style="font-size:0.8rem"> (Selected)</span>';
-        }
-
-        li.onclick = (e) => {
-          e.stopPropagation();
-          selectTeacher(teacher);
-        };
-        staffList.appendChild(li);
-      });
-      groupEl.appendChild(staffList);
+  filtered.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'subject-item';
+    if (state.selectedSubject === item.subject) {
+      el.classList.add('active');
     }
 
-    subjectListContainer.appendChild(groupEl);
+    const isBooked = state.myBookings.some(b => b.subject === item.subject);
+    if (isBooked) {
+      el.classList.add('booked-subject');
+    }
+
+    el.innerHTML = `
+      <span>
+        ${item.subject}
+        ${isBooked ? '<span style="color:var(--success); margin-left:0.5rem">✓</span>' : ''}
+      </span>
+      <span>${item.teacher}</span>
+    `;
+
+    el.onclick = () => selectSubject(item.subject, item.teacher);
+    subjectListContainer.appendChild(el);
   });
 }
 
-function selectSubject(subject) {
-  // Toggle: if clicking same subject, maybe collapse? No, just keep active.
-  // Actually, if we click a different subject, we reset selectedTeacher
-  if (state.selectedSubject !== subject) {
-    state.selectedTeacher = null; // Reset teacher filter
-  }
-
+function selectSubject(subject, teacher) {
   state.selectedSubject = subject;
-  state.searchTerm = '';
+  state.searchTerm = ''; // Optional: clear search on select? Let's keep filter if user wants.
+  // Actually, usually better to keep context.
 
-  renderSubjectList();
+  // Update UI
+  renderSubjectList(); // To highlight active class
 
-  updateHeaderContext();
+  // Update Header
+  selectedContextDisplay.textContent = `${subject} (${teacher})`;
+
   renderTimetable();
-}
-
-function selectTeacher(teacher) {
-  // Toggle teacher selection
-  if (state.selectedTeacher === teacher) {
-    state.selectedTeacher = null; // Deselect
-  } else {
-    state.selectedTeacher = teacher;
-  }
-  renderSubjectList(); // Re-render to show selection highlight
-  updateHeaderContext();
-  renderTimetable();
-}
-
-function updateHeaderContext() {
-  let text = state.selectedSubject || "Select a subject";
-  if (state.selectedTeacher) {
-    text += ` (Viewing ${state.selectedTeacher})`;
-  } else if (state.selectedSubject) {
-    text += ` (All Staff)`;
-  }
-  selectedContextDisplay.textContent = text;
 }
 
 function renderTimetable() {
@@ -340,11 +289,6 @@ function getOptionsForSlot(day, time) {
     const sDay = s.day.trim();
 
     if (sDay !== day || sTime !== cTime) return false;
-
-    // Filter by selected teacher if set
-    if (state.selectedTeacher && s.teacher !== state.selectedTeacher) {
-      return false;
-    }
 
     const subject = getSubjectByTeacher(s.teacher);
     return subject === state.selectedSubject;
