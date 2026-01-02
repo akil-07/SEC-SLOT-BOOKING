@@ -96,6 +96,29 @@
       </div>
     </div>
 
+    <!-- Export Modal -->
+    <div id="export-modal" class="modal hidden">
+      <div class="modal-content glass">
+        <h3>Export Timetable</h3>
+        <div class="modal-details">
+          <p>Select a day to mark as a Holiday (Optional):</p>
+          <select id="holiday-select">
+            <option value="">None</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button id="cancel-export-btn" class="secondary-btn">Cancel</button>
+          <button id="confirm-export-btn" class="primary-btn">Download PDF</button>
+        </div>
+      </div>
+    </div>
+
     <div id="toast" class="toast hidden"></div>
   </div>
   <script type="module" src="/src/main.js"></script>

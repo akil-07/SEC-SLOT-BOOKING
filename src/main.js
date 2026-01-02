@@ -53,11 +53,19 @@ function setupEventListeners() {
 
   cancelBtn.addEventListener('click', closeModal);
   confirmBookBtn.addEventListener('click', handleBookingConfirm);
-  downloadBtn.addEventListener('click', handleDownloadPDF);
+  downloadBtn.addEventListener('click', openExportModal);
   if (startDemoBtn) startDemoBtn.addEventListener('click', startDemo);
+
+  document.getElementById('cancel-export-btn').addEventListener('click', closeExportModal);
+  document.getElementById('confirm-export-btn').addEventListener('click', handleExportConfirm);
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
+  });
+
+  const exportModal = document.getElementById('export-modal');
+  exportModal.addEventListener('click', (e) => {
+    if (e.target === exportModal) closeExportModal();
   });
 }
 
@@ -431,6 +439,20 @@ function handleBookingConfirm() {
   renderTimetable();
 }
 
+function openExportModal() {
+  document.getElementById('export-modal').classList.remove('hidden');
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.add('hidden');
+}
+
+function handleExportConfirm() {
+  const holiday = document.getElementById('holiday-select').value;
+  closeExportModal();
+  generatePDF(holiday);
+}
+
 function showToast(msg, isSuccess = true) {
   toast.textContent = msg;
   toast.className = `toast ${isSuccess ? 'success' : 'error'}`;
@@ -440,7 +462,7 @@ function showToast(msg, isSuccess = true) {
   }, 3000);
 }
 
-async function handleDownloadPDF() {
+async function generatePDF(holidayDay = '') {
   // Visual feedback
   const originalText = downloadBtn.textContent;
   downloadBtn.textContent = 'Generating...';
@@ -483,22 +505,27 @@ async function handleDownloadPDF() {
       // Day Column
       tableHtml += `<td style="border: 1px solid #000; padding: 12px; font-weight: bold; background-color: #fafafa;">${day}</td>`;
 
-      // Slot Columns
-      TIME_SLOTS.forEach(time => {
-        const booking = state.myBookings.find(b =>
-          b.day === day && normalizeTime(b.time) === normalizeTime(time)
-        );
+      if (day === holidayDay) {
+        // Merge all slots into one "HOLIDAY" cell
+        tableHtml += `<td colspan="${TIME_SLOTS.length}" style="border: 1px solid #000; padding: 20px; font-weight: bold; text-align: center; font-size: 18px; letter-spacing: 2px; background-color: #fee2e2; color: #ef4444;">HOLIDAY</td>`;
+      } else {
+        // Slot Columns (Normal)
+        TIME_SLOTS.forEach(time => {
+          const booking = state.myBookings.find(b =>
+            b.day === day && normalizeTime(b.time) === normalizeTime(time)
+          );
 
-        let cellContent = '';
-        if (booking) {
-          cellContent = `
-            <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${booking.subject}</div>
-            <div style="font-size: 12px; color: #444;">${booking.teacher}</div>
-          `;
-        }
+          let cellContent = '';
+          if (booking) {
+            cellContent = `
+                <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${booking.subject}</div>
+                <div style="font-size: 12px; color: #444;">${booking.teacher}</div>
+              `;
+          }
 
-        tableHtml += `<td style="border: 1px solid #000; padding: 10px; vertical-align: top; height: 60px;">${cellContent}</td>`;
-      });
+          tableHtml += `<td style="border: 1px solid #000; padding: 10px; vertical-align: top; height: 60px;">${cellContent}</td>`;
+        });
+      }
       tableHtml += `</tr>`;
     });
 
