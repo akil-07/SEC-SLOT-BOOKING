@@ -86,53 +86,7 @@ function setupEventListeners() {
   }
 }
 
-// ... (loadLocalBookings, saveLocalBookings, updateMyBookingsUI, deleteBooking, renderSubjectList remain same until el.onclick)
 
-el.onclick = () => openPreviewModal(item.subject, item.teacher);
-subjectListContainer.appendChild(el);
-  });
-}
-
-// New: Preview Logic
-let pendingSelection = null;
-
-function openPreviewModal(subject, teacher) {
-  pendingSelection = { subject, teacher };
-
-  // Count slots for this teacher
-  const count = state.slots.filter(s => s.teacher === teacher).length;
-
-  previewSubject.textContent = subject;
-  previewTeacher.textContent = teacher;
-  previewSlotsCount.textContent = count;
-
-  previewModal.classList.remove('hidden');
-}
-
-function closePreviewModal() {
-  previewModal.classList.add('hidden');
-  pendingSelection = null;
-}
-
-function handleViewConfirm() {
-  if (pendingSelection) {
-    selectSubject(pendingSelection.subject, pendingSelection.teacher);
-  }
-  closePreviewModal();
-}
-
-function selectSubject(subject, teacher) {
-  state.selectedSubject = subject;
-  state.searchTerm = '';
-
-  // Update UI
-  renderSubjectList(); // To highlight active class
-
-  // Update Header
-  selectedContextDisplay.textContent = `${subject} (${teacher})`;
-
-  renderTimetable();
-}
 function loadLocalBookings() {
   const saved = localStorage.getItem('myBookings');
   if (saved) {
