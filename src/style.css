@@ -252,6 +252,74 @@ input[type="text"]:focus {
   text-overflow: ellipsis;
 }
 
+/* New Grouped Subject List Styles */
+.subject-group {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.subject-header {
+  padding: 0.8rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.subject-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.subject-group.active .subject-header {
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  border-left: 3px solid var(--primary);
+}
+
+.staff-suggestion-list {
+  list-style: none;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 0;
+  animation: slideDown 0.2s ease-out;
+}
+
+.staff-suggestion-list li {
+  padding: 0.5rem 1rem 0.5rem 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.staff-suggestion-list li:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.staff-suggestion-list li.selected-teacher {
+  color: var(--success);
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #my-bookings-list {
   overflow-y: auto;
   padding-right: 0.3rem;
@@ -471,6 +539,7 @@ input[type="text"]:focus {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-main);
 }
+
 /* Guide / Demo Styles */
 .guide-highlighter {
   position: absolute;
@@ -491,7 +560,7 @@ input[type="text"]:focus {
   width: 320px;
   max-width: 90vw;
   z-index: 1001;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   transition: all 0.3s ease;
   color: #fff;
 }
@@ -527,39 +596,40 @@ input[type="text"]:focus {
 }
 
 .guide-nav .small {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    width: auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  width: auto;
 }
 
 #guide-skip.small {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    width: auto;
-    background: transparent;
-    border: 1px solid var(--glass-border);
-    color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  width: auto;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
 }
+
 #guide-skip.small:hover {
-    background: rgba(255,255,255,0.05);
-    color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
 }
 
 .branding-btn {
-    border: 1px solid var(--primary);
-    background: rgba(99, 102, 241, 0.1);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s;
+  border: 1px solid var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
 }
+
 .branding-btn:hover {
-    background: var(--primary);
+  background: var(--primary);
 }
 
 body.guide-active {
-    overflow: hidden; 
+  overflow: hidden;
 }
-
