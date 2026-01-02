@@ -107,50 +107,67 @@ export class Guide {
 
     positionTooltip(target, position) {
         // We use the highlighter's rect for consistent spacing, but we could use target's rect too.
-        // Highlighter is absolute positioned, but getBoundingClientRect returns VIEWPORT coords.
         const rect = this.highlighter.getBoundingClientRect();
         const tooltipRect = this.tooltip.getBoundingClientRect();
         const spacing = 15;
-
-        // Viewport-relative coordinates
-        let top, left;
-
-        switch (position) {
-            case 'bottom':
-                top = rect.bottom + spacing;
-                left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-                break;
-            case 'top':
-                top = rect.top - tooltipRect.height - spacing;
-                left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-                break;
-            case 'right':
-                top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
-                left = rect.right + spacing;
-                break;
-            case 'left':
-                top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
-                left = rect.left - tooltipRect.width - spacing;
-                break;
-            case 'center':
-                top = (window.innerHeight - tooltipRect.height) / 2;
-                left = (window.innerWidth - tooltipRect.width) / 2;
-                break;
-            default:
-                top = rect.bottom + spacing;
-                left = rect.left;
-        }
-
-        // Boundary checks (keep within VIEWPORT)
         const padding = 10;
-        if (left < padding) left = padding;
-        if (left + tooltipRect.width > window.innerWidth - padding) {
-            left = window.innerWidth - tooltipRect.width - padding;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Helper to calculate coords for a given position
+        const getCoords = (pos) => {
+            let t, l;
+            switch (pos) {
+                case 'bottom':
+                    t = rect.bottom + spacing;
+                    l = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                    break;
+                case 'top':
+                    t = rect.top - tooltipRect.height - spacing;
+                    l = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                    break;
+                case 'right':
+                    t = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+                    l = rect.right + spacing;
+                    break;
+                case 'left':
+                    t = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+                    l = rect.left - tooltipRect.width - spacing;
+                    break;
+                case 'center':
+                    t = (viewportHeight - tooltipRect.height) / 2;
+                    l = (viewportWidth - tooltipRect.width) / 2;
+                    break;
+                default: // bottom
+                    t = rect.bottom + spacing;
+                    l = rect.left;
+            }
+            return { top: t, left: l };
+        };
+
+        let coords = getCoords(position);
+
+        // Auto-flip logic if it goes out of bounds (vertical only for now as requested)
+        // If bottom overflows, try top
+        if (position === 'bottom' && (coords.top + tooltipRect.height > viewportHeight - padding)) {
+            const topCoords = getCoords('top');
+            // check if top fits?
+            if (topCoords.top > padding) {
+                coords = topCoords;
+            }
+        }
+        // If top overflows, try bottom
+        if (position === 'top' && (coords.top < padding)) {
+            coords = getCoords('bottom');
         }
 
-        // Vertical boundary checks
-        if (top < padding) top = padding;
-        // If it goes off bottom, maybe flip it? For now just clamp or let it be (scrolling handles bottom usually)
+        let { top, left } = coords;
+
+        // Horizonal Boundary checks (clamp)
+        if (left < padding) left = padding;
+        if (left + tooltipRect.width > viewportWidth - padding) {
+            left = viewportWidth - tooltipRect.width - padding;
+        }
 
         // Apply SCROLL offset for Absolute positioning
         this.tooltip.style.top = `${top + window.scrollY}px`;

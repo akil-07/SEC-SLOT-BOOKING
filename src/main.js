@@ -587,7 +587,7 @@ function startDemo() {
       element: '#download-btn',
       title: 'Download Timetable',
       text: 'Once you are done, download your personalized schedule as a PDF.',
-      position: 'bottom'
+      position: 'top'
     }
   ]);
   guide.start();
