@@ -46,7 +46,11 @@ export class Guide {
         // Resize handler to adjust highlighter
         window.addEventListener('resize', () => {
             if (!this.highlighter.classList.contains('hidden')) {
-                this.positionHighlighter(this.steps[this.currentStep].element);
+                const target = document.querySelector(this.steps[this.currentStep].element);
+                if (target) {
+                    this.positionHighlighter(target);
+                    this.positionTooltip(target, this.steps[this.currentStep].position);
+                }
             }
         });
     }
@@ -102,13 +106,15 @@ export class Guide {
     }
 
     positionTooltip(target, position) {
-        const rect = this.highlighter.getBoundingClientRect(); // Use highlighter rect which includes padding
+        // We use the highlighter's rect for consistent spacing, but we could use target's rect too.
+        // Highlighter is absolute positioned, but getBoundingClientRect returns VIEWPORT coords.
+        const rect = this.highlighter.getBoundingClientRect();
         const tooltipRect = this.tooltip.getBoundingClientRect();
         const spacing = 15;
 
+        // Viewport-relative coordinates
         let top, left;
 
-        // Simple positioning logic
         switch (position) {
             case 'bottom':
                 top = rect.bottom + spacing;
@@ -135,13 +141,20 @@ export class Guide {
                 left = rect.left;
         }
 
-        // Boundary checks (basic)
-        if (left < 10) left = 10;
-        if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
-        if (top < 10) top = 10;
+        // Boundary checks (keep within VIEWPORT)
+        const padding = 10;
+        if (left < padding) left = padding;
+        if (left + tooltipRect.width > window.innerWidth - padding) {
+            left = window.innerWidth - tooltipRect.width - padding;
+        }
 
-        this.tooltip.style.top = `${top}px`;
-        this.tooltip.style.left = `${left}px`;
+        // Vertical boundary checks
+        if (top < padding) top = padding;
+        // If it goes off bottom, maybe flip it? For now just clamp or let it be (scrolling handles bottom usually)
+
+        // Apply SCROLL offset for Absolute positioning
+        this.tooltip.style.top = `${top + window.scrollY}px`;
+        this.tooltip.style.left = `${left + window.scrollX}px`;
     }
 
     nextStep() {
