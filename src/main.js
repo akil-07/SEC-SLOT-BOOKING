@@ -35,6 +35,13 @@ const selectedContextDisplay = document.getElementById('selected-context');
 const filesTitle = document.getElementById('files-title');
 const downloadBtn = document.getElementById('download-btn');
 const startDemoBtn = document.getElementById('start-demo-btn');
+// Preview Modal Elements
+const previewModal = document.getElementById('preview-modal');
+const previewSubject = document.getElementById('preview-subject');
+const previewTeacher = document.getElementById('preview-teacher');
+const previewSlotsCount = document.getElementById('preview-slots-count');
+const cancelPreviewBtn = document.getElementById('cancel-preview-btn');
+const confirmViewBtn = document.getElementById('confirm-view-btn');
 
 // Initialization
 function init() {
@@ -59,6 +66,10 @@ function setupEventListeners() {
   document.getElementById('cancel-export-btn').addEventListener('click', closeExportModal);
   document.getElementById('confirm-export-btn').addEventListener('click', handleExportConfirm);
 
+  // Preview Modal Listeners
+  cancelPreviewBtn.addEventListener('click', closePreviewModal);
+  confirmViewBtn.addEventListener('click', handleViewConfirm);
+
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
   });
@@ -67,8 +78,61 @@ function setupEventListeners() {
   exportModal.addEventListener('click', (e) => {
     if (e.target === exportModal) closeExportModal();
   });
+
+  if (previewModal) {
+    previewModal.addEventListener('click', (e) => {
+      if (e.target === previewModal) closePreviewModal();
+    });
+  }
 }
 
+// ... (loadLocalBookings, saveLocalBookings, updateMyBookingsUI, deleteBooking, renderSubjectList remain same until el.onclick)
+
+el.onclick = () => openPreviewModal(item.subject, item.teacher);
+subjectListContainer.appendChild(el);
+  });
+}
+
+// New: Preview Logic
+let pendingSelection = null;
+
+function openPreviewModal(subject, teacher) {
+  pendingSelection = { subject, teacher };
+
+  // Count slots for this teacher
+  const count = state.slots.filter(s => s.teacher === teacher).length;
+
+  previewSubject.textContent = subject;
+  previewTeacher.textContent = teacher;
+  previewSlotsCount.textContent = count;
+
+  previewModal.classList.remove('hidden');
+}
+
+function closePreviewModal() {
+  previewModal.classList.add('hidden');
+  pendingSelection = null;
+}
+
+function handleViewConfirm() {
+  if (pendingSelection) {
+    selectSubject(pendingSelection.subject, pendingSelection.teacher);
+  }
+  closePreviewModal();
+}
+
+function selectSubject(subject, teacher) {
+  state.selectedSubject = subject;
+  state.searchTerm = '';
+
+  // Update UI
+  renderSubjectList(); // To highlight active class
+
+  // Update Header
+  selectedContextDisplay.textContent = `${subject} (${teacher})`;
+
+  renderTimetable();
+}
 function loadLocalBookings() {
   const saved = localStorage.getItem('myBookings');
   if (saved) {
@@ -179,9 +243,37 @@ function renderSubjectList() {
       <span>${item.teacher}</span>
     `;
 
-    el.onclick = () => selectSubject(item.subject, item.teacher);
+    el.onclick = () => openPreviewModal(item.subject, item.teacher);
     subjectListContainer.appendChild(el);
   });
+}
+
+// New: Preview Logic
+let pendingSelection = null;
+
+function openPreviewModal(subject, teacher) {
+  pendingSelection = { subject, teacher };
+
+  // Count slots for this teacher
+  const count = state.slots.filter(s => s.teacher === teacher).length;
+
+  previewSubject.textContent = subject;
+  previewTeacher.textContent = teacher;
+  previewSlotsCount.textContent = count;
+
+  previewModal.classList.remove('hidden');
+}
+
+function closePreviewModal() {
+  previewModal.classList.add('hidden');
+  pendingSelection = null;
+}
+
+function handleViewConfirm() {
+  if (pendingSelection) {
+    selectSubject(pendingSelection.subject, pendingSelection.teacher);
+  }
+  closePreviewModal();
 }
 
 function selectSubject(subject, teacher) {
