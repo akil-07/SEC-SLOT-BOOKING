@@ -471,3 +471,95 @@ input[type="text"]:focus {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-main);
 }
+/* Guide / Demo Styles */
+.guide-highlighter {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 15px rgba(99, 102, 241, 0.5);
+  pointer-events: none;
+  z-index: 1000;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  border: 2px solid var(--primary);
+}
+
+.guide-tooltip {
+  position: absolute;
+  background: #1e293b;
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 320px;
+  max-width: 90vw;
+  z-index: 1001;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+  color: #fff;
+}
+
+.guide-content h3 {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.guide-content p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.guide-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.guide-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.guide-nav span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.guide-nav .small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    width: auto;
+}
+
+#guide-skip.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    width: auto;
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+}
+#guide-skip.small:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+}
+
+.branding-btn {
+    border: 1px solid var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.branding-btn:hover {
+    background: var(--primary);
+}
+
+body.guide-active {
+    overflow: hidden; 
+}
+

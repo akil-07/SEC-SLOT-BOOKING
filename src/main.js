@@ -2,6 +2,7 @@ import './style.css'
 import staticData from './data.json';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { Guide } from './guide.js';
 
 // Configuration
 const TIME_SLOTS = ["8-10", "10-12", "1-3", "3-5"];
@@ -33,6 +34,7 @@ const toast = document.getElementById('toast');
 const selectedContextDisplay = document.getElementById('selected-context');
 const filesTitle = document.getElementById('files-title');
 const downloadBtn = document.getElementById('download-btn');
+const startDemoBtn = document.getElementById('start-demo-btn');
 
 // Initialization
 function init() {
@@ -52,6 +54,7 @@ function setupEventListeners() {
   cancelBtn.addEventListener('click', closeModal);
   confirmBookBtn.addEventListener('click', handleBookingConfirm);
   downloadBtn.addEventListener('click', handleDownloadPDF);
+  if (startDemoBtn) startDemoBtn.addEventListener('click', startDemo);
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
@@ -546,6 +549,48 @@ async function handleDownloadPDF() {
     downloadBtn.textContent = originalText;
     downloadBtn.disabled = false;
   }
+}
+
+function startDemo() {
+  const guide = new Guide([
+    {
+      element: '.app-header',
+      title: 'Welcome to Slot Booking',
+      text: 'This system helps you book academic slots for your subjects. Let us take a quick tour!',
+      position: 'bottom'
+    },
+    {
+      element: '.search-container',
+      title: 'Search Subjects',
+      text: 'Start by searching for your subject or teacher here. The list below will update automatically.',
+      position: 'bottom'
+    },
+    {
+      element: '.directory-section',
+      title: 'Select a Subject',
+      text: 'Click on a subject from this list to secure your spot. This will reveal the available time slots in the timetable.',
+      position: 'right'
+    },
+    {
+      element: '.timetable-section',
+      title: 'View Available Slots',
+      text: 'The timetable shows the weekly schedule. Click on any available slot card to book it.',
+      position: 'left'
+    },
+    {
+      element: '.bookings-section',
+      title: 'Manage Your Bookings',
+      text: 'All your confirmed bookings will appear here. You can cancel them if needed.',
+      position: 'right'
+    },
+    {
+      element: '#download-btn',
+      title: 'Download Timetable',
+      text: 'Once you are done, download your personalized schedule as a PDF.',
+      position: 'bottom'
+    }
+  ]);
+  guide.start();
 }
 
 init();
